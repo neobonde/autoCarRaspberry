@@ -63,7 +63,13 @@ string car::status(int _tacho, int _roadL,  int _roadR, int _dist, int _batOne, 
 	//afstand er afstanden i cm, 3 digits
 	//bat1 og bat2 er 0 og 0, da de ikke er implementeret.
 
-	cout << _tacho << endl;	
+	cout << "Tacho: " << _tacho << endl;	
+	cout << "RoadL: " << _roadL << endl;	
+	cout << "RoadR: " << _roadR << endl;	
+	cout << "Distance: " <<  _dist << endl;	
+	cout << "Bat1: " << _batOne << endl;	
+	cout << "Bat2: " << _batTwo << endl;	
+	
 	stringstream output;
 	string outputTcp;
 	
@@ -196,11 +202,11 @@ bool car::overtake(bool infraLeft_, bool infraRight_, int distance_){
 
 
 void car::followRoad(bool infraLeft_, bool infraRight_,int distance_){
-	if(distance_ < MIN_DIST){
+	/*if(distance_ < MIN_DIST){
 		run = 0;		
 		speed = 0;
 	}
-
+*/
 	if(infraLeft_){
 		if(leftCount > -100){
 			leftCount --;

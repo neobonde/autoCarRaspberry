@@ -87,9 +87,8 @@ void *TCP::waitForConnection(void){
 		cout<<command<<endl;
 		if(command.compare("01QstatusW")==0)
 		{
-			//string statusStr = autoCar.status(spiIn[0], spiIn[1], spiIn[2], spiIn[3], spiIn[4], spiIn[5]);
-			string statusStr = autoCar.status(26,1,2,2,99,88);
-		
+			string statusStr = autoCar.status(spiIn[0], spiIn[1], spiIn[2], spiIn[3], spiIn[4], spiIn[5]);
+			//string statusStr = autoCar.status(26,1,2,2,99,88);	
 			
 			cout << "status: " << statusStr << endl;
 			writeTextTCP(statusStr);			
@@ -116,6 +115,7 @@ void *TCP::waitForConnection(void){
 		else if(command.compare("04QstartW")==0)
 		{
 			autoCar.start();
+			cout << autoCar.getRun() << endl;
 			writeTextTCP("14QstartQ111119999W");//FIXME		
 
 		}
@@ -167,6 +167,7 @@ const string TCP::readTextTCP(string inText)
  */
 void TCP::writeTextTCP(string line)
 {
+	cout << "Wrote to TCP: " << line << endl;
 	write(sockNew, line.c_str(), line.length());
 	write(sockNew, "\0", 1);
 	command.clear();
