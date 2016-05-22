@@ -1,9 +1,16 @@
 #include "car.h"
 
+#define MIN_DIST 20
+#define TURN_CONST 1
+#define OVERTAKE_SPEED 6
+#define CAR_LENGTH 0.8
 
-car::car(){
+car::car(): tmr(){
 	run = 0;
 	speed = 0;
+	leftCount = 0;
+	rightCount = 0;
+	laneChangeState = 0;
 }
 
 int car::speed10(int8_t spiSpeed){
@@ -48,7 +55,7 @@ void car::start(){
 void car::stop(){
 	run = 0;
 }		//Turns off the lights, sets run to false.
-string car::status(int _speed, int _roadL,  int _roadR, int _dist, int _batOne,  int _batTwo ){		
+string car::status(int _tacho, int _roadL,  int _roadR, int _dist, int _batOne,  int _batTwo ){		
 	//5 roadR roadL speed afstand bat1 bat2
 	//roadR 0 eller 1
 	//roadL 0 eller 1
@@ -56,14 +63,15 @@ string car::status(int _speed, int _roadL,  int _roadR, int _dist, int _batOne, 
 	//afstand er afstanden i cm, 3 digits
 	//bat1 og bat2 er 0 og 0, da de ikke er implementeret.
 
-	cout << _speed << endl;	
+	cout << _tacho << endl;	
 	stringstream output;
 	string outputTcp;
 	
-	char spdSignPrefix ='+';
+	char tachoSignPrefix ='+';
+	string tachoPrefix="";
 	string distPrefix="00" ;
-	string spdPrefix="";
 	string batPrefix1, batPrefix2;
+	
 	if(_dist<10){
 		distPrefix="00";
 	}
@@ -73,14 +81,14 @@ string car::status(int _speed, int _roadL,  int _roadR, int _dist, int _batOne, 
 	else{
 		distPrefix="";
 	}
-	if(_speed<0){
-		spdSignPrefix ='-';
+	if(_tacho<0){
+		tachoSignPrefix ='-';
 	}
 
-	if(_speed<10){
-		spdPrefix ="0";
+	if(_tacho<10){
+		tachoPrefix ="0";
 	}else{
-		spdPrefix ="";
+		tachoPrefix ="";
 	}
 
 	if(_batOne<10){
@@ -98,7 +106,7 @@ string car::status(int _speed, int _roadL,  int _roadR, int _dist, int _batOne, 
 
 
 
-	output << "11QstatusQ5" << _roadR << _roadL << spdSignPrefix << spdPrefix <<  abs(_speed) <<distPrefix << _dist << batPrefix1 << _batOne << batPrefix2 << _batTwo  << "W" ;
+	output << "11QstatusQ5" << _roadR << _roadL << tachoSignPrefix << tachoPrefix <<  abs(_tacho) <<distPrefix << _dist << batPrefix1 << _batOne << batPrefix2 << _batTwo  << "W" ;
 	return output.str();
 }	
 
@@ -106,20 +114,131 @@ void car::setSpeed(int _speed){
 	speed = _speed;
 };	//Set the speed of the car for the next SPI transaction.
 
+void car::setServo(int _servo){
+	servo = _servo;
+}
+
+int car::getServo(){
+	return servo;
+}
+
 int car::getSpeed(){
 	return speed;
 }
-
-
-void car::overtake(){} 
-
 
 bool car::getRun(){
 	return run;
 }
 
+void car::setOvertakeFlag(bool flag_){
+	overtakeFlag = flag_;
+}
+
+bool car::getOvertakeFlag(){
+	return overtakeFlag;
+}
+
+double car::calcOvertakeTime(float carLength_){
+	return (carLength_*3.6)/speed;
+}
 
 
+bool car::laneChangeL(bool infraRight_){
+	servo = -100;
+	if(infraRight_){
+		servo = 20;
+		return true;
+	}
+	return false;	
+}
+
+bool car::laneChangeR(bool infraLeft_){
+	servo = 100;
+	if(infraLeft_){
+		servo = -20;
+		return true;
+	}
+	return false;	
+}
+
+bool car::overtake(bool infraLeft_, bool infraRight_, int distance_){
+	run = 1;
+	if(speed == 0){
+		speed = OVERTAKE_SPEED;
+	}
+	switch(laneChangeState){
+		case 0:
+			if(laneChangeL(infraRight_)){
+				laneChangeState = 1;
+				overtakeTime = calcOvertakeTime(CAR_LENGTH);
+				tmr.reset();
+			}
+			break;
+		case 1:
+			if(tmr.elapsed() > overtakeTime){
+				laneChangeState = 2;
+			}
+			followRoad(infraLeft_, infraRight_, distance_);
+			
+			//wait for 0.8m
+				
+			break;
+
+		case 2:
+			if(laneChangeR(infraLeft_)){
+				laneChangeState = 0;
+				return 1;
+			}
+			break;
+	}
+	return 0;
+}
+
+
+void car::followRoad(bool infraLeft_, bool infraRight_,int distance_){
+	if(distance_ < MIN_DIST){
+		run = 0;		
+		speed = 0;
+	}
+
+	if(infraLeft_){
+		if(leftCount > -100){
+			leftCount --;
+		}
+		servo = leftCount * TURN_CONST;		
+	}else{
+		leftCount = 0;	
+	}
+
+	if(infraRight_){
+		if(rightCount < 100){	
+			rightCount ++;
+		}
+		servo = rightCount * TURN_CONST;		
+	}else{
+		rightCount = 0;	
+	}
+}
+
+
+	void car::setTacho(int tacho_){
+		tacho = tacho_;	
+	}
+	void car::setRoadL(int roadL_){
+		roadL = roadL_;
+	}
+	void car::setRoadR(int roadR_){
+		roadR = roadR_;
+	}
+	void car::setDist(int dist_){
+		distance = dist_;
+	}
+	void car::setBat1(int bat1_){
+		batOne = bat1_;
+	}
+	void car::setBat2(int bat2_){
+		batTwo = bat2_;
+	}
 
 
 

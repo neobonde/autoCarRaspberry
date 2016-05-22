@@ -18,9 +18,40 @@ TCP::TCP(int port)
 
 	int enable = 1;
 	if (setsockopt(sockWel, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-		cout << "Error set sock opt" << endl;
+		cout << "Error on resuaddr SO_OPT" << endl;
 
-	cout << "sock opt set" << endl;
+	cout << "sock SO_REUSEADDR set" << endl;
+
+	if (setsockopt(sockNew, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(int)) <0){
+		cout << "Error on keepalive SO_OPT" << endl;
+	}
+	cout << "sock SO_KEEPALIVE set" << endl;
+
+	int keepAlive = 3;
+/*	
+	if (setsockopt(sockNew, SOL_TCP, TCP_KEEPCNT, &keepAlive, sizeof(int)) <0){
+		cout << "Error on keepalive TCP_KEEPCNT" << endl;
+	}
+
+	cout << "sock TCP_KEEPCNT set" << endl;
+
+	int idle = 1;
+
+	if (setsockopt(sockNew, SOL_TCP, TCP_KEEPIDLE, &idle, sizeof(int)) <0){
+		cout << "Error on keepalive TCP_KEEPIDLE" << endl;
+	}
+
+	cout << "sock TCP_KEEPIDLE set" << endl;
+
+
+	if (setsockopt(sockNew, SOL_TCP, TCP_KEEPINTVL, &idle, sizeof(int)) <0){
+		cout << "Error on keepalive TCP_KEEPINTVL" << endl;
+	}
+
+	cout << "sock TCP_KEEPINTVL set" << endl;
+*/
+
+
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -91,7 +122,6 @@ void *TCP::waitForConnection(void){
 		else if(command.compare("05QstopW")==0)
 		{
 			autoCar.stop();
-#include "SPI.h"
 			writeTextTCP("15QstopQ3001W");
 		}
 		else if(command.compare("06QtestW")==0)
@@ -117,8 +147,10 @@ void *TCP::threadWrapper(void* arg){
 const string TCP::readTextTCP(string inText)
 {
 	char ch;
-
-	read(sockNew, &ch, 1);
+	if(read(sockNew, &ch, 1) == -1){
+		cout << "Error on read - Terminating" << endl;
+		exit(1);
+	}
 	while(ch != 0)
 	{
 		inText += ch;
